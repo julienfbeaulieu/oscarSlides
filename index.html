@@ -1,1 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>And the winner is . . .</title>
+  <meta name="description" content="">
+  <meta name="author" content="Julien Beaulieu">
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="stylesheet" href="libraries/frameworks/revealjs/css/reveal.min.css">
+  <link rel="stylesheet" href="libraries/frameworks/revealjs/css/theme/default.css" id="theme">
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" id="theme">
+  <!--[if lt IE 9]>
+  <script src="lib/js/html5shiv.js"></script>
+  <![endif]-->  <link rel="stylesheet" href = "assets/css/ribbons.css">
 
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <section class='' data-state='' id='slide-1'>
+  <h2>Introduction</h2>
+  <ul>
+<li>Every year, <a href="%22https://en.wikipedia.org/wiki/Academy_Awards%22">Academy Awards</a> are given to the best movies featured in the previous year.</li>
+<li>The <code>Oscar shiny app</code> explores data from the movies that were nominated in the Oscar ceremonies.<br></li>
+<li>The app can assessed on the <a href="%22https://jbeaulieu.shinyapps.io/oscar%22">shinyapps.io</a></li>
+<li>Alternatively, the app can be run locally by:
+
+<ol>
+<li>downloading the <code>server.R</code> and <code>ui.R</code> files from the <a href="%22https://github.com/julienfbeaulieu/oscar-project%22%22">github</a>, </li>
+<li>setting the working directory to where the files are located,</li>
+<li>running the following R code:</li>
+</ol></li>
+</ul>
+
+<pre><code class="r">library(shiny)
+runApp()
+</code></pre>
+
+</section>
+<section class='' data-state='' id='slide-2'>
+  <h2>Methodology</h2>
+  <ol>
+<li><p>The <a href="%22https://www.aggdata.com/free_data_awards_locations/academy_awards%22">original dataset</a> lists information about each nomination for each year. </p>
+
+<ul>
+<li>Since an award can either go to a film or to an artist, I processed the database to distinguish the two. The resulting <code>oscar.csv</code> database lists 10 variables about 10098 nominations.</li>
+</ul></li>
+<li><p>From this, a second dataset was created and takes the point of view of each film. Number of academy nominations and awards were summed, and extra information was pulled out using the <a href="%22http://www.omdbapi.com/%22">omdb api</a>. The resulting <code>movie.csv</code> database lists 27 variables about 4361 nominated movies.</p>
+
+<ul>
+<li>For instance, the following call retrieves information about the <a href="%22https://en.wikipedia.org/wiki/Titanic_(1997_film">titanic</a>&quot;) movie:</li>
+</ul></li>
+</ol>
+
+<pre><code class="r">  t &lt;- &quot;Titanic&quot;
+  y &lt;- &quot;1997&quot;
+  url &lt;- paste0(&quot;http://www.omdbapi.com/?t=&quot;,t,&quot;&amp;y=&quot;,y,&quot;&amp;plot=short&amp;r=json&quot;)
+
+  temp &lt;- as.data.frame(fromJSON(url))
+</code></pre>
+
+</section>
+<section class='' data-state='' id='slide-3'>
+  <h2>Side panel</h2>
+  <h3>Filter movies</h3>
+
+<p>In the side panel, you can filter the dataset, either by year, by number of oscar nominations or awards.
+    - For instance, the data can be filtered for the period 1980-2000, with a minimum number of 5 nominations and 0 awards.
+    - The movie database is the filtered using the following r code:</p>
+
+<pre><code class="r">    minYear &lt;- 1980; maxYear &lt;- 2000; minNomination &lt;- 5; minAward &lt;- 0
+    movieSubset &lt;- filter(movie, Year &gt;= minYear, Year &lt;= maxYear, 
+                          Academy.Nominations &gt;= minNomination, Academy.Awards &gt;= minAward)
+</code></pre>
+
+<h3>Select variables</h3>
+
+<p>Additionnaly, you can select variables for the x- and y-axis of the graph and the for the linear model.
+    - For instance, the <a href="%22https://en.wikipedia.org/wiki/Metacritic#Metascores%22">metascore</a> and the <a href="%22https://en.wikipedia.org/wiki/Internet_Movie_Database%22">imdb user rating</a> could be selected as the x and y variables.</p>
+
+<pre><code class="r">    plotData &lt;- data.frame(y = movieSubset[[&quot;imdbRating&quot;]], x = movieSubset[[&quot;Metascore&quot;]])
+</code></pre>
+
+</section>
+<section class='' data-state='' id='slide-4'>
+  <h2>Output graph</h2>
+  <p>For the preceeding filtered subset of movies and the variables selected, the Oscar shiny app would output the following graph:</p>
+
+<p><img src="assets/fig/unnamed-chunk-6-1.png" alt="plot of chunk unnamed-chunk-6"> </p>
+
+</section>
+<section class='' data-state='' id='slide-5'>
+  <h2>Output linear model</h2>
+  <ul>
+<li>For the same filter and variable setting, the Oscar shiny app would ouput this linear model:</li>
+</ul>
+
+<pre><code>## 
+## Call:
+## lm(formula = as.formula(paste(&quot;imdbRating&quot;, &quot; ~ &quot;, &quot;Metascore&quot;)), 
+##     data = movieSubset)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -1.05376 -0.39359 -0.09442  0.34108  1.50724 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(&gt;|t|)    
+## (Intercept) 6.166080   0.432039  14.272  &lt; 2e-16 ***
+## Metascore   0.020333   0.005502   3.696 0.000421 ***
+## ---
+## Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1
+## 
+## Residual standard error: 0.5305 on 73 degrees of freedom
+##   (46 observations deleted due to missingness)
+## Multiple R-squared:  0.1576, Adjusted R-squared:  0.1461 
+## F-statistic: 13.66 on 1 and 73 DF,  p-value: 0.000421
+</code></pre>
+
+<ul>
+<li>Namely, for the highly nominated movies (&gt;= 5 nominations) of the period 1980-2000, the Metascore is highly significant in predicting the imdbRating. Though, the correlation between the two variables is really low.</li>
+</ul>
+
+</section>
+    </div>
+  </div>
+</body>
+  <script src="libraries/frameworks/revealjs/lib/js/head.min.js"></script>
+  <script src="libraries/frameworks/revealjs/js/reveal.min.js"></script>
+  <script>
+  // Full list of configuration options available here:
+  // https://github.com/hakimel/reveal.js#configuration
+  Reveal.initialize({
+    controls: true,
+    progress: true,
+    history: true,
+    center: true,
+    theme: Reveal.getQueryHash().theme || 'default', 
+    transition: Reveal.getQueryHash().transition || 'default', 
+    dependencies: [
+    // Cross-browser shim that fully implements classList -
+    // https://github.com/eligrey/classList.js/
+      { src: 'libraries/frameworks/revealjs/lib/js/classList.js', condition: function() { return !document.body.classList;}},
+      // Zoom in and out with Alt+click
+      { src: 'libraries/frameworks/revealjs/plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+      // Speaker notes
+      { src: 'libraries/frameworks/revealjs/plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } },
+      // Remote control your reveal.js presentation using a touch device
+      //{ src: 'libraries/frameworks/revealjs/plugin/remotes/remotes.js', async: true, condition: function() { return !!document.body.classList; } }
+      ]
+  });
+  </script>  <!-- LOAD HIGHLIGHTER JS FILES -->
+<script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<!-- DONE LOADING HIGHLIGHTER JS FILES -->
+ 
+
+</html>
